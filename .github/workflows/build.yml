@@ -7,13 +7,17 @@ on:
 
 jobs:
   build:
-    # PERBAIKAN 1: Gunakan runner yang masih menyediakan VS 2022
     runs-on: windows-2022
 
     steps:
     - name: Checkout Code
-      # PERBAIKAN 2: Update ke v5 untuk menghilangkan warning Node.js 20
       uses: actions/checkout@v5
+
+    # LANGKAH BARU: Siapkan environment MSVC (Visual Studio C++)
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
     - name: Setup CMake
       uses: jwlawson/actions-setup-cmake@v2
