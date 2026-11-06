@@ -1,0 +1,34 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main ] # Atau branch default repositori Anda
+  workflow_dispatch: # Memungkinkan menjalankan workflow secara manual
+
+jobs:
+  build:
+    runs-on: windows-latest # Menjalankan build di server Windows terbaru
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.20' # Sesuai kebutuhan minimum proyek
+
+    - name: Configure CMake
+      # Perintah dari dokumentasi proyek untuk build mode Release
+      run: cmake -B build/release -G "Visual Studio 17 2022" -A x64
+
+    - name: Build
+      # Membangun target utama aplikasi
+      run: cmake --build build/release --config Release --target SteamlessController
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SteamlessController-Windows
+        # Lokasi file .exe hasil build
+        path: build/release/Release/SteamlessController.exe
