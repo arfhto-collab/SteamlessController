@@ -7,31 +7,35 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    # Runner ini sekarang menyediakan VS 2026 + CMake modern,
+    # sudah terbukti sukses di workflow release.yml asli
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v5
+      - name: Checkout Code
+        uses: actions/checkout@v5
 
-    - name: Setup MSVC
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
+      # Menggunakan preset dari CMakePresets.json (cara yang dipakai release.yml)
+      # Tidak perlu ilammy/msvc-dev-cmd atau jwlawson/actions-setup-cmake lagi
+      - name: Configure and Build
+        run: |
+          cmake --preset release
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
+          cmake --build --preset release
+          if ($LASTEXITCODE -ne 0) { throw "CMake build failed" }
 
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v2
-      with:
-        # KUNCI PERBAIKAN: CMake 3.21+ diperlukan untuk generator VS 2022
-        cmake-version: '3.27'
+      - name: Collect Executables
+        run: |
+          New-Item -ItemType Directory staging -Force | Out-Null
+          Copy-Item "build\release\Release\SteamlessController.exe" staging\
+          Copy-Item "build\release\Release\SteamlessDeviceCycle.exe" staging\
+          Copy-Item "build\release\Release\ViGEmBusProbe.exe" staging\
 
-    - name: Configure CMake
-      run: cmake -B build/release -G "Visual Studio 17 2022" -A x64
-
-    - name: Build
-      run: cmake --build build/release --config Release --target SteamlessController
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: SteamlessController-Windows
-        path: build/release/Release/SteamlessController.exe
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: SteamlessController-Windows
+          path: staging\*.exe
